@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marche di Moda</title>
+<style>
+
+    body {
+
+      margin: 0;
+
+      font-family: 'Segoe UI', sans-serif;
+
+      background: #f0f0f0;
+
+    }
+
+    .main, .photo-page {
+
+      display: none;
+
+      height: 100vh;
+
+    }
+
+    .welcome {
+
+      height: 100vh;
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      text-align: center;
+
+      background: linear-gradient(135deg, #000, #444);
+
+      color: white;
+
+    }
+
+    .welcome .box {
+
+      background: white;
+
+      color: black;
+
+      padding: 40px;
+
+      border-radius: 10px;
+
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+
+    }
+
+    .welcome a {
+
+      text-decoration: none;
+
+      background: #000;
+
+      color: #fff;
+
+      padding: 10px 20px;
+
+      border-radius: 5px;
+
+      font-weight: bold;
+
+    }
+
+    .sidebar {
+
+      width: 250px;
+
+      background-color: #222;
+
+      color: white;
+
+      padding: 20px;
+
+      overflow-y: auto;
+
+      max-height: 100vh;
+
+    }
+
+    .sidebar h2 {
+
+      margin-top: 0;
+
+      color: #ffcc00;
+
+    }
+
+    .sidebar ul {
+
+      list-style: none;
+
+      padding: 0;
+
+      margin: 0;
+
+    }
+
+    .sidebar ul li {
+
+      padding: 10px 0;
+
+      border-bottom: 1px solid #444;
+
+      cursor: pointer;
+
+    }
+
+    .sidebar ul li:hover {
+
+      color: #ffcc00;
+
+    }
+
+    .content {
+
+      flex-grow: 1;
+
+      padding: 40px;
+
+      background: white;
+
+    }
+
+    .main {
+
+      display: flex;
+
+    }
+
+    .photo-page {
+
+      padding: 20px;
+
+      background: #fff;
+
+      overflow-y: auto;
+
+    }
+
+    .photo-page h2 {
+
+      margin-bottom: 20px;
+
+    }
+
+    .image-gallery {
+
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 10px;
+
+    }
+
+    .image-gallery img {
+
+      width: 150px;
+
+      height: auto;
+
+      object-fit: cover;
+
+      border-radius: 4px;
+
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+
+    }
+
+    input[type="file"] {
+
+      margin-top: 10px;
+
+    }
+
+    .back-btn {
+
+      display: inline-block;
+
+      margin-bottom: 20px;
+
+      background: #000;
+
+      color: white;
+
+      padding: 8px 15px;
+
+      border-radius: 5px;
+
+      text-decoration: none;
+
+      cursor: pointer;
+
+    }
+
+    .admin-controls {
+
+      margin-top: 20px;
+
+    }
+
+    .delete-btn {
+
+      background: red;
+
+      color: white;
+
+      border: none;
+
+      padding: 5px 10px;
+
+      margin-left: 10px;
+
+      cursor: pointer;
+
+      border-radius: 3px;
+
+    }
+</style>
+</head>
+<body>
+ 
+<!-- Schermata iniziale -->
+<div class="welcome" id="welcomeScreen">
+<div class="box">
+<h1>Benvenuto!</h1>
+<p><a href="#" onclick="showMain()">Vedi le Marche di Moda</a></p>
+</div>
+</div>
+ 
+<!-- Pagina marche -->
+<div class="main" id="mainScreen">
+<div class="sidebar">
+<h2>Marche</h2>
+<ul id="brandList"></ul>
+</div>
+<div class="content">
+<h1>Seleziona una marca dalla lista</h1>
+<p>Visualizza e salva le immagini associate. Accesso per inserimento/eliminazione riservato.</p>
+</div>
+</div>
+ 
+<!-- Pagina foto per marca -->
+<div class="photo-page" id="photoScreen">
+<div class="back-btn" onclick="goBack()">? Torna indietro</div>
+<h2 id="brandTitle"></h2>
+<div class="admin-controls" id="adminControls" style="display:none;">
+<input type="file" multiple accept="image/*" onchange="handleFileUpload(event)">
+<button onclick="clearImages()">?? Elimina Tutto</button>
+</div>
+<div class="image-gallery" id="imageGallery"></div>
+</div>
+ 
+<script>
+
+  const brands = [
+
+    "Dior", "Ralph Lauren", "Versace", "Balenciaga", "Essentials",
+
+    "Moncler", "Prada", "CP", "Gucci", "Lacoste", "Louis Vuitton",
+
+    "Amiri", "Kenzo", "Stone Island", "Givenchy", "McQueen",
+
+    "Nike", "Corteiz", "Syna", "Trapstar", "Blauer", "Celine", "Burberry"
+
+  ];
+
+  const PASSWORD = "admin123";
+ 
+  let isAdmin = false;
+
+  let currentBrand = "";
+ 
+  const welcomeScreen = document.getElementById('welcomeScreen');
+
+  const mainScreen = document.getElementById('mainScreen');
+
+  const photoScreen = document.getElementById('photoScreen');
+
+  const brandTitle = document.getElementById('brandTitle');
+
+  const imageGallery = document.getElementById('imageGallery');
+
+  const brandListEl = document.getElementById('brandList');
+
+  const adminControls = document.getElementById('adminControls');
+ 
+  function showMain() {
+
+    welcomeScreen.style.display = 'none';
+
+    mainScreen.style.display = 'flex';
+
+    if (!isAdmin) {
+
+      const input = prompt("Inserisci la password per gestire le immagini:");
+
+      if (input === PASSWORD) {
+
+        isAdmin = true;
+
+        alert("Accesso amministratore attivato.");
+
+      } else {
+
+        alert("Accesso in modalità sola visualizzazione.");
+
+      }
+
+    }
+
+  }
+ 
+  function goBack() {
+
+    photoScreen.style.display = 'none';
+
+    mainScreen.style.display = 'flex';
+
+    imageGallery.innerHTML = '';
+
+  }
+ 
+  function openBrandPhotos(brand) {
+
+    currentBrand = brand;
+
+    brandTitle.textContent = `Foto per ${brand}`;
+
+    mainScreen.style.display = 'none';
+
+    photoScreen.style.display = 'block';
+
+    imageGallery.innerHTML = '';
+
+    loadImages();
+
+    adminControls.style.display = isAdmin ? 'block' : 'none';
+
+  }
+ 
+  function handleFileUpload(event) {
+
+    const files = event.target.files;
+
+    Array.from(files).forEach(file => {
+
+      const reader = new FileReader();
+
+      reader.onload = e => {
+
+        saveImage(currentBrand, e.target.result);
+
+        displayImage(e.target.result);
+
+      };
+
+      reader.readAsDataURL(file);
+
+    });
+
+  }
+ 
+  function saveImage(brand, dataURL) {
+
+    const key = `images_${brand}`;
+
+    const stored = JSON.parse(localStorage.getItem(key)) || [];
+
+    stored.push(dataURL);
+
+    localStorage.setItem(key, JSON.stringify(stored));
+
+  }
+ 
+  function loadImages() {
+
+    const key = `images_${currentBrand}`;
+
+    const stored = JSON.parse(localStorage.getItem(key)) || [];
+
+    stored.forEach(displayImage);
+
+  }
+ 
+  function displayImage(dataURL) {
+
+    const container = document.createElement('div');
+
+    const img = document.createElement('img');
+
+    img.src = dataURL;
+
+    container.appendChild(img);
+ 
+    if (isAdmin) {
+
+      const btn = document.createElement('button');
+
+      btn.textContent = "Elimina";
+
+      btn.className = "delete-btn";
+
+      btn.onclick = () => deleteImage(dataURL);
+
+      container.appendChild(btn);
+
+    }
+ 
+    imageGallery.appendChild(container);
+
+  }
+ 
+  function deleteImage(dataURL) {
+
+    const key = `images_${currentBrand}`;
+
+    let stored = JSON.parse(localStorage.getItem(key)) || [];
+
+    stored = stored.filter(item => item !== dataURL);
+
+    localStorage.setItem(key, JSON.stringify(stored));
+
+    imageGallery.innerHTML = '';
+
+    stored.forEach(displayImage);
+
+  }
+ 
+  function clearImages() {
+
+    if (confirm("Sei sicuro di voler eliminare tutte le immagini di questa marca?")) {
+
+      localStorage.removeItem(`images_${currentBrand}`);
+
+      imageGallery.innerHTML = '';
+
+    }
+
+  }
+ 
+  brands.forEach(brand => {
+
+    const li = document.createElement('li');
+
+    li.textContent = brand;
+
+    li.onclick = () => openBrandPhotos(brand);
+
+    brandListEl.appendChild(li);
+
+  });
+</script>
+</body>
+</html>
+
+ 
